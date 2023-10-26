@@ -1,15 +1,18 @@
 import * as bcrypt from 'bcrypt';
 
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { JwtService } from '@nestjs/jwt';
+
+import { CreateUserDto } from './dto/create-user.dto';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
+    private readonly jwtService: JwtService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -28,10 +31,12 @@ export class UserService {
       password: await bcrypt.hash(createUserDto.password, saltRounds),
     });
 
-    return { user };
+    const token = this.jwtService.sign({ email: createUserDto.email });
+
+    return { user, token };
   }
 
-  // findOne(id: number) {
-  //   return `This action returns all user`;
-  // }
+  async findOne(email: string) {
+    return await this.userRepository.findOne({ where: { email } });
+  }
 }

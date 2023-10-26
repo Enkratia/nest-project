@@ -6,6 +6,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
@@ -14,7 +15,7 @@ import { Category } from 'src/category/entities/category.entity';
 
 @Entity()
 export class Transaction {
-  @PrimaryColumn({ name: 'transaction_id' })
+  @PrimaryGeneratedColumn({ name: 'transaction_id' })
   id: number;
 
   @Column()
@@ -32,7 +33,7 @@ export class Transaction {
 
   @OneToMany(() => Category, (category) => category.transactions)
   @JoinColumn({ name: 'category_id' })
-  category: Category;
+  category: Category[];
 
   @CreateDateColumn()
   createdAt: Date;
