@@ -33,7 +33,8 @@ export class Transaction {
 
   @OneToMany(() => Category, (category) => category.transactions)
   @JoinColumn({ name: 'category_id' })
-  category: Category[];
+  // category: Category[];
+  category: Category;
 
   @CreateDateColumn()
   createdAt: Date;

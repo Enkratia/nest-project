@@ -10,43 +10,71 @@ import {
   ValidationPipe,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 
 import { TransactionService } from './transaction.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { AuthorGuard } from 'src/guard/author.guard';
 
 @Controller('transaction')
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe())
+  @UseGuards(JwtAuthGuard)
   create(@Body() createTransactionDto: CreateTransactionDto, @Req() req) {
-    console.log('console', req.user);
-    // return this.transactionService.create(createTransactionDto, +req.user.id);
-    return 'hello';
+    return this.transactionService.create(createTransactionDto, req.user.id);
   }
 
-  // @Get()
-  // findAll() {
-  //   return this.transactionService.findAll();
-  // }
+  @Get(':type/find')
+  @UseGuards(JwtAuthGuard)
+  findAllByType(@Req() req, @Param('type') type: string) {
+    console.log(req.user.id, type);
+    return this.transactionService.findAllByType(+req.user.id, type);
+  }
 
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.transactionService.findOne(+id);
-  // }
+  @Get('pagination')
+  @UseGuards(JwtAuthGuard)
+  findAllWithPagination(
+    @Req() req,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 3,
+  ) {
+    return this.transactionService.findAllWithPagination(
+      +req.user.id,
+      page,
+      limit,
+    );
+  }
 
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateTransactionDto: UpdateTransactionDto) {
-  //   return this.transactionService.update(+id, updateTransactionDto);
-  // }
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  findAll(@Req() req) {
+    return this.transactionService.findAll(req.user.id);
+  }
 
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.transactionService.remove(+id);
-  // }
+  @Get(':type/:id')
+  @UseGuards(JwtAuthGuard, AuthorGuard)
+  findOne(@Param('id') id: string) {
+    return this.transactionService.findOne(+id);
+  }
+
+  @Patch(':type/:id')
+  @UseGuards(JwtAuthGuard, AuthorGuard)
+  update(
+    @Param('id') id: string,
+    @Body() updateTransactionDto: UpdateTransactionDto,
+  ) {
+    return this.transactionService.update(+id, updateTransactionDto);
+  }
+
+  @Delete(':type/:id')
+  @UseGuards(JwtAuthGuard, AuthorGuard)
+  remove(@Param('id') id: string) {
+    return this.transactionService.remove(+id);
+  }
 }

@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -19,7 +23,7 @@ export class TransactionService {
       amount: createTransactionDto.amount,
       type: createTransactionDto.type,
       user: { id },
-      category: [{ id: +createTransactionDto.category }],
+      category: { id: +createTransactionDto.category },
     };
 
     if (!newTransaction)
@@ -28,19 +32,86 @@ export class TransactionService {
     return await this.transactionRepository.save(newTransaction);
   }
 
-  findAll() {
-    return `This action returns all transaction`;
+  async findAll(id: number) {
+    const transactions = await this.transactionRepository.find({
+      where: { user: { id } },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    return transactions;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} transaction`;
+  async findOne(id: number) {
+    const transaction = await this.transactionRepository.findOne({
+      where: {
+        id,
+      },
+      relations: {
+        user: true,
+        category: true,
+      },
+    });
+
+    if (!transaction) throw new NotFoundException('Transaction not found');
+
+    return transaction;
   }
 
-  update(id: number, updateTransactionDto: UpdateTransactionDto) {
-    return `This action updates a #${id} transaction`;
+  async update(id: number, updateTransactionDto: UpdateTransactionDto) {
+    const transaction = await this.transactionRepository.findOne({
+      where: {
+        id,
+      },
+    });
+
+    if (!transaction) throw new NotFoundException('Transaction not found');
+
+    return await this.transactionRepository.update(id, updateTransactionDto);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} transaction`;
+  async remove(id: number) {
+    const transaction = await this.transactionRepository.findOne({
+      where: {
+        id,
+      },
+    });
+
+    if (!transaction) throw new NotFoundException('Transaction not found');
+
+    return await this.transactionRepository.delete(id);
+  }
+
+  async findAllWithPagination(id: number, page: number, limit: number) {
+    const transactions = await this.transactionRepository.find({
+      where: {
+        user: { id },
+      },
+      relations: {
+        user: true,
+        category: true,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+      take: limit,
+      skip: (page - 1) * limit,
+    });
+
+    return transactions;
+  }
+
+  async findAllByType(id: number, type: string) {
+    const transactions = await this.transactionRepository.find({
+      where: {
+        user: { id },
+        type,
+      },
+    });
+
+    const total = transactions.reduce((acc, obj) => acc + obj.amount, 0);
+
+    return total;
   }
 }
